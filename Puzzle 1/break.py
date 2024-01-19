@@ -43,26 +43,33 @@ for i in range(len(ciphertext)):
     keySlice = keystream[i : (len(ciphertext) + i)]
 
     # Decrypt ciphertext using current key slice
-    # test_plaintext = list(ciphertext)
-    # for i in range(len(test_plaintext)):
-    #     test_plaintext[i] = chr((ord(test_plaintext[i]) - ord('A') - keySlice + 26) % 26 + ord('a'))
-    # test_plaintext = "".join(test_plaintext)
+    encryptedList = list(ciphertext)
+    decryptedList = []
+    for j in encryptedList:
+        cipherchar = j
+        cipherPosition = alphabet.find(cipherchar)
+        for k in keySlice:
+            keychar = k
+            keyPosition = alphabet.find(keychar)
+        decryptedchar = alphabet[(cipherPosition - keyPosition) % 26]
+        decryptedList.append(decryptedchar)
+    final_plaintext = "".join(decryptedList)
 
     # Calculate Index of Coincidence of the current plaintext
-    letter_probabilities = probability_text(test_plaintext)
+    letter_probabilities = probability_text(final_plaintext)
     ioc = 0.0
     for i in range(26):
         ioc += p[i]*letter_probabilities[(i) % 26]
 
     # Check if the Index of Coincidence is within 0.05 of p_ioc
-    if (ioc > 0.060) and (ioc < 0.070):
-        keyioc_list.append(ioc)
-        key_list.append(keySlice)
+        #if (ioc > 0.060) and (ioc < 0.070):
+    keyioc_list.append(ioc)
+    key_list.append(keySlice)
 
 # Find the ioc value that is closest to p_ioc
-closest_number = None
+closest_number = 0.0
 min_difference = float('inf')
-closest_index = None
+closest_index = 0
 for index, i in enumerate(keyioc_list):
     difference = abs(p_ioc - i)
     if difference < min_difference:
@@ -70,8 +77,22 @@ for index, i in enumerate(keyioc_list):
         closest_number = i
         closest_index = index
 
-key = key_list[closest_index]
+#print(key_list)
+key = key_list[closest_index - 1]
 
 # Decrypt using the found key
+encryptedList2 = list(ciphertext)
+decryptedList2 = []
+for j in encryptedList2:
+    cipherchar2 = j
+    cipherPosition2 = alphabet.find(cipherchar2)
+    for k in key:
+        keychar2 = k
+        keyPosition2 = alphabet.find(keychar2)
+    decryptedchar2 = alphabet[(cipherPosition2 - keyPosition2) % 26]
+    decryptedList2.append(decryptedchar2)
+final_plaintext2 = "".join(decryptedList2)
+
+print(final_plaintext2)
 
 
