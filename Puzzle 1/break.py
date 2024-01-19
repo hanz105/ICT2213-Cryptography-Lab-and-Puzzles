@@ -19,7 +19,7 @@ def read_from_file(file_path):
 
     return upper_case
 
-def probability_ciphertext(str):
+def probability_text(str):
     tempList = []
     all_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     for letter in all_letters:
@@ -28,55 +28,50 @@ def probability_ciphertext(str):
         tempList[i] /= len(str)
     return tempList
 
-def calculate_ioc(ciphertext_percent):
-    #max_ioc = 0
-    #for j in range(26):
-    ioc = 0.0
-    for i in range(26):
-        ioc += p[i] * ciphertext_percent[(i) % 26]
-
-        # if ioc > max_ioc:
-        #     max_ioc = ioc
-        #     key = j
-	
-    return ioc
-
+# Read ciphertext.txt and book.txt
 ciphertext = read_from_file(sys.argv[1])
 keystream = read_from_file(sys.argv[2])
-key_length = len(ciphertext)
-ct_probabilities_list = probability_ciphertext(ciphertext)
-#print(ct_probabilities_list)
+
+keyioc_list = []
+key_list = []
+p_ioc = 0.065
+alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # Retrieve Key Slice
-max_ioc = 0
-for i in range(key_length):
-    keySlice = keystream[i : (key_length + i)]
-    # Calculate Index for Coincidence for current key slice
+#key_length = len(ciphertext)
+for i in range(len(ciphertext)):
+    keySlice = keystream[i : (len(ciphertext) + i)]
+
+    # Decrypt ciphertext using current key slice
+    # test_plaintext = list(ciphertext)
+    # for i in range(len(test_plaintext)):
+    #     test_plaintext[i] = chr((ord(test_plaintext[i]) - ord('A') - keySlice + 26) % 26 + ord('a'))
+    # test_plaintext = "".join(test_plaintext)
+
+    # Calculate Index of Coincidence of the current plaintext
+    letter_probabilities = probability_text(test_plaintext)
     ioc = 0.0
     for i in range(26):
-        ioc += p[i] * ct_probabilities_list[(i) % 26]
-        
-        if ioc > max_ioc:
-            max_ioc = ioc
-            key = keySlice
+        ioc += p[i]*letter_probabilities[(i) % 26]
 
-print(key)
+    # Check if the Index of Coincidence is within 0.05 of p_ioc
+    if (ioc > 0.060) and (ioc < 0.070):
+        keyioc_list.append(ioc)
+        key_list.append(keySlice)
 
+# Find the ioc value that is closest to p_ioc
+closest_number = None
+min_difference = float('inf')
+closest_index = None
+for index, i in enumerate(keyioc_list):
+    difference = abs(p_ioc - i)
+    if difference < min_difference:
+        min_difference = difference
+        closest_number = i
+        closest_index = index
 
-    #print("Key {0}: {1}".format(i, keySlice))
-    # formatted_key_slice = "key slice {0}: {1}".format(i, keySlice)
-    # text_file = open("test.txt", "w", encoding='UTF-8')
-    # n = text_file.write(formatted_key_slice + '\n')
-    # if n == len(formatted_key_slice):
-    #     print("Success")
-    # else:
-    #     print("Nah")
+key = key_list[closest_index]
 
-# Find the length of the ciphertext (513)
-#ciphertext_length = len(ciphertext)
-#print(ciphertext_length)
+# Decrypt using the found key
 
-# Checking keyList
-# for i in range(10):
-#     print("Key {}: {}".format(i, keyList[i]))
 
