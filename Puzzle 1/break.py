@@ -72,8 +72,8 @@ for i in range(len(ciphertext) - len(ciphertext) + 1):
     keyioc_list.append(ioc)
     key_list.append(keySlice)
 
-print("keyioc: {}".format(keyioc_list))
-print("keylist: {}".format(key_list))
+#print("keyioc: {}".format(keyioc_list))
+#print("keylist: {}".format(key_list))
 # Find the ioc value that is closest to p_ioc
 closest_number = 0.0
 min_difference = float('inf')
