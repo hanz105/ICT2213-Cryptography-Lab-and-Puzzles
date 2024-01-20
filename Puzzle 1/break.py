@@ -6,6 +6,8 @@ p = [0.082, 0.015, 0.028, 0.042, 0.127, 0.022,
      0.063, 0.09, 0.028, 0.01, 0.024, 0.002,
      0.02, 0.001]
 
+alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
 # Opens the file as a string, removes all punctuation and spaces, and make everything upper case
 def read_from_file(file_path):
     open_file = file_path
@@ -28,6 +30,21 @@ def probability_text(str):
         tempList[i] /= len(str)
     return tempList
 
+def decrypt(text, key_slice):
+    cipherList = list(text)
+    keyList = list(key_slice)
+    decryptedList = []
+    for i in range(0, len(ciphertext)):
+        cipher_char = cipherList[i]
+        key_char = keyList[i]
+        cipherPosition = alphabet.find(cipher_char)
+        keyPosition = alphabet.find(key_char)
+        decrypted_char = alphabet[(cipherPosition - keyPosition)]
+        decryptedList.append(decrypted_char)
+        decrypted_text = "".join(decryptedList)
+
+    return decrypted_text
+
 # Read ciphertext.txt and book.txt
 ciphertext = read_from_file(sys.argv[1])
 keystream = read_from_file(sys.argv[2])
@@ -35,37 +52,28 @@ keystream = read_from_file(sys.argv[2])
 keyioc_list = []
 key_list = []
 p_ioc = 0.065
-alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 # Retrieve Key Slice
 #key_length = len(ciphertext)
-for i in range(len(ciphertext)):
+for i in range(len(ciphertext) - len(ciphertext) + 1):
     keySlice = keystream[i : (len(ciphertext) + i)]
 
     # Decrypt ciphertext using current key slice
-    encryptedList = list(ciphertext)
-    decryptedList = []
-    for j in encryptedList:
-        cipherchar = j
-        cipherPosition = alphabet.find(cipherchar)
-        for k in keySlice:
-            keychar = k
-            keyPosition = alphabet.find(keychar)
-        decryptedchar = alphabet[(cipherPosition - keyPosition) % 26]
-        decryptedList.append(decryptedchar)
-    final_plaintext = "".join(decryptedList)
+    decrypted_slice = decrypt(ciphertext, keySlice)
 
     # Calculate Index of Coincidence of the current plaintext
-    letter_probabilities = probability_text(final_plaintext)
+    letter_probabilities = probability_text(decrypted_slice)
     ioc = 0.0
     for i in range(26):
-        ioc += p[i]*letter_probabilities[(i) % 26]
+        ioc += p[i] * letter_probabilities[(i)]
 
     # Check if the Index of Coincidence is within 0.05 of p_ioc
         #if (ioc > 0.060) and (ioc < 0.070):
     keyioc_list.append(ioc)
     key_list.append(keySlice)
 
+print("keyioc: {}".format(keyioc_list))
+print("keylist: {}".format(key_list))
 # Find the ioc value that is closest to p_ioc
 closest_number = 0.0
 min_difference = float('inf')
@@ -77,22 +85,10 @@ for index, i in enumerate(keyioc_list):
         closest_number = i
         closest_index = index
 
-#print(key_list)
-key = key_list[closest_index - 1]
+#closest_ioc, index = min(enumerate(keyioc_list, key=lambda x: abs(x - p_ioc)))
+key = key_list[closest_index]
 
 # Decrypt using the found key
-encryptedList2 = list(ciphertext)
-decryptedList2 = []
-for j in encryptedList2:
-    cipherchar2 = j
-    cipherPosition2 = alphabet.find(cipherchar2)
-    for k in key:
-        keychar2 = k
-        keyPosition2 = alphabet.find(keychar2)
-    decryptedchar2 = alphabet[(cipherPosition2 - keyPosition2) % 26]
-    decryptedList2.append(decryptedchar2)
-final_plaintext2 = "".join(decryptedList2)
+final_plaintext = decrypt(ciphertext, key)
 
-print(final_plaintext2)
-
-
+print(final_plaintext)
