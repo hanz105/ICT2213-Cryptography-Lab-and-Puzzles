@@ -1,5 +1,6 @@
 import sys
 
+# Hardcoded frequencies for English characters
 p = [0.082, 0.015, 0.028, 0.042, 0.127, 0.022, 
      0.02, 0.061, 0.07, 0.001, 0.008, 0.04, 
      0.024, 0.067, 0.075, 0.019, 0.001, 0.06, 
@@ -21,74 +22,56 @@ def read_from_file(file_path):
 
     return upper_case
 
-def probability_text(str):
-    tempList = []
-    all_letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    for letter in all_letters:
-        tempList.append(str.count(letter))
+def getSection(index):
+    return keystream[index:index+len_ct]
+
+def decryptCT(ct, key):
+    # Ascii ct-key to reverse alphabet shift
+    newDecrypted = ''
+    for i in range(len(ct)):
+        newDecrypted += chr(((ord(ct[i]) - ord(key[i])) % 26) + ord('A'))
+    return newDecrypted
+
+# Function to compute the key of a ciphertext encrypted by a shift cipher  
+def get_ioc(ct):
+    # Compute character frequencies for ciphertext ct (array q)
+    # Compute counts then divide by size
+    q = []
+    for letter in alphabet:
+        q.append(ct.count(letter))
     for i in range(26):
-        tempList[i] /= len(str)
-    return tempList
+        q[i] /= len(ct)
 
-def decrypt(text, key_slice):
-    cipherList = list(text)
-    keyList = list(key_slice)
-    decryptedList = []
-    for i in range(0, len(ciphertext)):
-        cipher_char = cipherList[i]
-        key_char = keyList[i]
-        cipherPosition = alphabet.find(cipher_char)
-        keyPosition = alphabet.find(key_char)
-        decrypted_char = alphabet[(cipherPosition - keyPosition)]
-        decryptedList.append(decrypted_char)
-        decrypted_text = "".join(decryptedList)
-
-    return decrypted_text
+    # Compute index of coincidence for different shift values j
+    # Key value is maintained into variable key (max IOC)
+    ioc = 0
+    for i in range(26):
+        ioc += p[i]*q[(i)%26]
+	
+    return ioc
 
 # Read ciphertext.txt and book.txt
 ciphertext = read_from_file(sys.argv[1])
 keystream = read_from_file(sys.argv[2])
 
-keyioc_list = []
-key_list = []
-p_ioc = 0.065
+len_ct = len(ciphertext)
 
-# Retrieve Key Slice
-#key_length = len(ciphertext)
-for i in range(len(ciphertext) - len(ciphertext) + 1):
-    keySlice = keystream[i : (len(ciphertext) + i)]
+max_ioc = 0
+possible_key = ''
+possible_plaintext = ''
+for i in range(len(keystream)-len_ct):
+    key = getSection(i)
+    possibleMessage = decryptCT(ciphertext,key)
+    ioc = get_ioc(possibleMessage)
+    if(ioc > max_ioc):
+        max_ioc = ioc
+        possible_key = key
+        possible_plaintext = possibleMessage
+    if i > (len(keystream)-len_ct):
+        print("Key was not found!")
+if max_ioc < 0.060 or max_ioc >= 0.07:
+    print("Key was not found!")
 
-    # Decrypt ciphertext using current key slice
-    decrypted_slice = decrypt(ciphertext, keySlice)
-
-    # Calculate Index of Coincidence of the current plaintext
-    letter_probabilities = probability_text(decrypted_slice)
-    ioc = 0.0
-    for i in range(26):
-        ioc += p[i] * letter_probabilities[(i)]
-
-    # Check if the Index of Coincidence is within 0.05 of p_ioc
-        #if (ioc > 0.060) and (ioc < 0.070):
-    keyioc_list.append(ioc)
-    key_list.append(keySlice)
-
-#print("keyioc: {}".format(keyioc_list))
-#print("keylist: {}".format(key_list))
-# Find the ioc value that is closest to p_ioc
-closest_number = 0.0
-min_difference = float('inf')
-closest_index = 0
-for index, i in enumerate(keyioc_list):
-    difference = abs(p_ioc - i)
-    if difference < min_difference:
-        min_difference = difference
-        closest_number = i
-        closest_index = index
-
-#closest_ioc, index = min(enumerate(keyioc_list, key=lambda x: abs(x - p_ioc)))
-key = key_list[closest_index]
-
-# Decrypt using the found key
-final_plaintext = decrypt(ciphertext, key)
-
-print(final_plaintext)
+#print(max_ioc)
+print("Key found: {}".format(possible_key))
+print("Plaintext: {}".format(possible_plaintext))
